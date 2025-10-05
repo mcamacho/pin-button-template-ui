@@ -421,18 +421,23 @@ export class ModalComponent implements IModalComponent {
     const zoom = parseFloat(this.zoomSlider?.value || '1');
     const rotation = parseFloat(this.rotationSlider?.value || '0');
 
-    // Apply transform to preview image - fix positioning logic
-    // The container clips to circle, image moves within it
+    // Apply transform to preview image - fix crop and fill logic
+    // Make sure image fills the circular container completely
+    const offsetX = (cropX - 0.5) * 100 * zoom;
+    const offsetY = (cropY - 0.5) * 100 * zoom;
+
     previewImage.style.cssText = `
-      width: ${100 * zoom}%;
-      height: ${100 * zoom}%;
+      width: ${Math.max(100 * zoom, 100)}%;
+      height: ${Math.max(100 * zoom, 100)}%;
       object-fit: cover;
       position: absolute;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%)
-                 translate(${(0.5 - cropX) * 100}%, ${(0.5 - cropY) * 100}%)
+                 translate(${-offsetX}%, ${-offsetY}%)
                  rotate(${rotation}deg);
+      min-width: 100%;
+      min-height: 100%;
     `;
 
     // Ensure the container maintains its circular shape
@@ -440,6 +445,7 @@ export class ModalComponent implements IModalComponent {
     if (previewContainer) {
       previewContainer.style.overflow = 'hidden';
       previewContainer.style.borderRadius = '50%';
+      previewContainer.style.position = 'relative';
     }
   }
 

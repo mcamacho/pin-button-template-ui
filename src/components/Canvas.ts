@@ -419,37 +419,56 @@ export class CanvasComponent implements ICanvasComponent {
     // Clear existing content
     element.innerHTML = '';
 
-    // Create image container
-    const imageContainer = document.createElement('div');
-    imageContainer.style.cssText = `
-      width: 100%;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
+    // Apply circular masking directly to the button area element
+    element.style.cssText = `
+      position: absolute;
+      left: ${this.inchesToPixels(buttonArea.x) - (this.inchesToPixels(buttonArea.diameter) / 2)}px;
+      top: ${this.inchesToPixels(buttonArea.y) - (this.inchesToPixels(buttonArea.diameter) / 2)}px;
+      width: ${this.inchesToPixels(buttonArea.diameter)}px;
+      height: ${this.inchesToPixels(buttonArea.diameter)}px;
       border-radius: 50%;
+      border: 2px solid #007bff;
+      background: transparent;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.2s ease;
     `;
 
     const img = document.createElement('img');
+
+    // Calculate correct crop offset - same logic as modal
+    const offsetX = (buttonArea.cropX - 0.5) * 100 * buttonArea.zoom;
+    const offsetY = (buttonArea.cropY - 0.5) * 100 * buttonArea.zoom;
+
     img.style.cssText = `
       position: absolute;
-      width: ${100 * buttonArea.zoom}%;
-      height: ${100 * buttonArea.zoom}%;
+      width: ${Math.max(100 * buttonArea.zoom, 100)}%;
+      height: ${Math.max(100 * buttonArea.zoom, 100)}%;
       object-fit: cover;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%)
-                 translate(${(0.5 - buttonArea.cropX) * 100}%, ${(0.5 - buttonArea.cropY) * 100}%)
+                 translate(${-offsetX}%, ${-offsetY}%)
                  rotate(${buttonArea.rotation}deg);
       pointer-events: none;
+      min-width: 100%;
+      min-height: 100%;
     `;
 
     img.src = imageAsset.dataUrl;
     img.alt = imageAsset.filename;
 
-    imageContainer.appendChild(img);
-    element.appendChild(imageContainer);
-    element.style.backgroundColor = 'transparent';
-    element.style.border = '2px solid #007bff';
+    // Add image directly to button element (which has circular clipping)
+    element.appendChild(img);
+
+    // Add hover effects
+    element.addEventListener('mouseenter', () => {
+      element.style.transform = 'scale(1.05)';
+    });
+
+    element.addEventListener('mouseleave', () => {
+      element.style.transform = 'scale(1)';
+    });
   }
 
   // Utility methods for external use
