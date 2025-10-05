@@ -140,6 +140,9 @@ export class PinButtonApp implements AppController {
       await this.printCurrentSession();
     });
 
+    // Global keyboard handler for Ctrl+P
+    document.addEventListener('keydown', this.handleGlobalKeydown.bind(this));
+
     // Global keyboard shortcuts
     document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
   }
@@ -421,19 +424,11 @@ export class PinButtonApp implements AppController {
     if (!this.currentSession || !this.printButtonComponent) return;
 
     try {
-      this.printButtonComponent.setLoading(true);
-
-      const printConfig = config || PrintConfiguration.createDefault(this.currentSession.id);
-
-      await this.printService.printSession(this.currentSession.id, printConfig);
-
-      this.showSuccess('Print job sent successfully');
-
+      // Use the PrintButton component's triggerPrint method which handles the styling correctly
+      await this.printButtonComponent.triggerPrint(this.currentSession.id, config);
     } catch (error) {
       console.error('Print failed:', error);
       this.showError('Failed to print session');
-    } finally {
-      this.printButtonComponent.setLoading(false);
     }
   }
 
@@ -487,6 +482,17 @@ export class PinButtonApp implements AppController {
     }
   }
 
+  private handleGlobalKeydown(event: KeyboardEvent): void {
+    // Intercept Ctrl+P or Cmd+P
+    if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Use our custom print function instead of browser default
+      this.printCurrentSession();
+    }
+  }
+
   private handleKeyboardShortcuts(event: KeyboardEvent): void {
     // Ctrl/Cmd + S: Save session
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
@@ -494,11 +500,7 @@ export class PinButtonApp implements AppController {
       this.promptSaveSession();
     }
 
-    // Ctrl/Cmd + P: Print
-    if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
-      event.preventDefault();
-      this.printCurrentSession();
-    }
+    // Note: Ctrl/Cmd + P is handled by handleGlobalKeydown
 
     // Escape: Close modal
     if (event.key === 'Escape' && this.modalComponent?.isVisible()) {

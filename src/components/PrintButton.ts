@@ -198,13 +198,10 @@ export class PrintButtonComponentImpl implements PrintButtonComponent {
         Object.assign(PrintConfiguration.createDefault(sessionId), config) :
         PrintConfiguration.createDefault(sessionId);
 
-      // Simulate print preparation delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Generate print styles
+      // Apply print styles immediately
       const printStyles = this.generatePrintStyles(printConfig);
 
-      // Apply print styles to document
+      // Remove any existing print styles
       const existingStyles = document.querySelector('#print-styles');
       if (existingStyles) {
         existingStyles.remove();
@@ -215,25 +212,34 @@ export class PrintButtonComponentImpl implements PrintButtonComponent {
       styleElement.textContent = printStyles;
       document.head.appendChild(styleElement);
 
-      // Hide non-print elements
+      // Hide non-print elements immediately
       this.hideNonPrintElements();
+
+      // Force a reflow to ensure styles are applied
+      document.body.offsetHeight;
+
+      // Add a small delay to ensure DOM changes are processed
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Trigger browser print
       window.print();
 
-      // Restore elements after print
+      // Restore elements after print (with longer delay to ensure print dialog closes)
       setTimeout(() => {
         this.restoreNonPrintElements();
         if (styleElement.parentNode) {
           styleElement.parentNode.removeChild(styleElement);
         }
-      }, 1000);
+      }, 2000);
 
     } catch (error) {
       console.error('Print failed:', error);
       this.showPrintError(error instanceof Error ? error.message : 'Unknown print error');
     } finally {
-      this.setLoading(false);
+      // Set loading to false after a delay to ensure print dialog has time to open
+      setTimeout(() => {
+        this.setLoading(false);
+      }, 500);
     }
   }
 
@@ -243,55 +249,49 @@ export class PrintButtonComponentImpl implements PrintButtonComponent {
 
     return `
       @media print {
+        /* Override page settings if different from default */
         @page {
           size: ${paperDimensions.width}in ${paperDimensions.height}in;
           margin: ${margins.top}in ${margins.right}in ${margins.bottom}in ${margins.left}in;
         }
 
-        body {
-          margin: 0;
-          padding: 0;
-          background: white !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-
-        .pin-canvas {
-          transform: none !important;
-          box-shadow: none !important;
-          border: none !important;
-          margin: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-        }
-
-        .button-area-component {
-          border: none !important;
-          box-shadow: none !important;
-        }
-
+        /* Ensure all elements that should be hidden are hidden */
+        .print-button,
+        .config-modal-overlay,
+        .app-header,
+        .toolbar,
+        .status-bar,
         .no-print {
           display: none !important;
         }
 
-        /* Hide UI elements */
-        .print-button,
-        .modal-overlay,
-        .toolbar,
-        .sidebar {
-          display: none !important;
+        /* Force print layout */
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
         }
 
-        /* Ensure high quality images */
-        img {
-          image-rendering: auto;
-          -ms-interpolation-mode: bicubic;
+        .main-content {
+          display: block !important;
         }
-      }
 
-      @media screen {
-        .print-only {
-          display: none;
+        .canvas-wrapper {
+          display: block !important;
+        }
+
+        .pin-canvas {
+          display: block !important;
+          position: relative !important;
+        }
+
+        /* Ensure button areas and images are visible */
+        .button-area {
+          display: block !important;
+          position: absolute !important;
+        }
+
+        .button-area img {
+          display: block !important;
         }
       }
     `;

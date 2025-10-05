@@ -594,8 +594,21 @@ body {
 
 /* Print Styles */
 @media print {
+  @page {
+    size: 8.5in 11in;
+    margin: 0.5in;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body {
     background: white !important;
+    margin: 0;
+    padding: 0;
+    font-size: 12pt;
   }
 
   .app-header,
@@ -608,12 +621,28 @@ body {
   .main-content {
     margin: 0;
     padding: 0;
+    display: block !important;
+    flex: none !important;
+    overflow: visible !important;
   }
 
   .canvas-wrapper {
     padding: 0;
-    background: none;
-    background-image: none;
+    background: none !important;
+    background-image: none !important;
+    overflow: visible !important;
+    min-height: auto !important;
+    display: block !important;
+    flex: none !important;
+  }
+
+  .canvas-container {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
   }
 
   .pin-canvas {
@@ -621,12 +650,35 @@ body {
     border: none !important;
     border-radius: 0 !important;
     transform: none !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
+    width: 680px !important;  /* 8.5" at 80 DPI */
+    height: 880px !important; /* 11" at 80 DPI */
+    background: white !important;
+    position: relative !important;
+    display: block !important;
+    overflow: visible !important;
   }
 
+  .button-area {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .button-area img {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    image-rendering: auto;
+    -ms-interpolation-mode: bicubic;
+  }
+
+  /* Ensure button areas are visible in print */
   .button-area-component {
     border: none !important;
     box-shadow: none !important;
+    background: transparent !important;
   }
 }
 
