@@ -1,50 +1,48 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+Version change: NEW → 1.0.0 (initial constitution for pin-button-template-ui)
+Added principles:
+- I. Code Quality Standards
+- II. Testing Requirements
+- III. User Experience Consistency
+- IV. Performance Standards
+- V. Component Architecture
+Added sections:
+- Development Workflow
+- Quality Assurance
+Templates requiring updates: ✅ aligned with existing plan-template.md, spec-template.md, tasks-template.md
+Follow-up TODOs: None
+-->
+
+# Pin Button Template UI Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Code Quality Standards
+All code MUST follow established quality standards including type safety, consistent formatting, and comprehensive documentation. Components MUST be self-contained with clear interfaces. Code MUST pass linting, type checking, and static analysis without warnings. Dependencies MUST be minimal and well-justified.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Testing Requirements (NON-NEGOTIABLE)
+Test-driven development is mandatory: Tests written → User approved → Tests fail → Then implement. Every component MUST have unit tests covering all props and states. Integration tests MUST verify component interactions and user workflows. Visual regression tests MUST prevent UI inconsistencies.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. User Experience Consistency
+All UI components MUST follow the established design system with consistent spacing, typography, colors, and interaction patterns. Components MUST be accessible (WCAG 2.1 AA compliant). Responsive design MUST work across all target devices and screen sizes. User feedback MUST be immediate and clear.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Performance Standards
+Components MUST render within 16ms (60fps). Bundle sizes MUST remain under defined thresholds. Images and assets MUST be optimized. Code splitting MUST be implemented for larger applications. Performance budgets MUST be enforced in CI/CD pipeline.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Component Architecture
+Components MUST be reusable, composable, and follow single responsibility principle. Props MUST be typed and validated. State management MUST be predictable and testable. Side effects MUST be properly handled and tested.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Development Workflow
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+All development MUST follow the TDD cycle with immediate feedback loops. Code reviews MUST verify adherence to all constitutional principles. Automated quality gates MUST pass before merging. Performance metrics MUST be tracked and compared against baselines.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Quality Assurance
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Every pull request MUST include tests that verify the change works as intended. Visual changes MUST include before/after screenshots. Performance impact MUST be measured and documented. Breaking changes MUST be explicitly flagged and approved.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other development practices. Amendments require documentation, team approval, and migration plan. All PRs and reviews MUST verify compliance with these principles. Complexity deviations MUST be justified with clear rationale and simpler alternatives documented.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-05
