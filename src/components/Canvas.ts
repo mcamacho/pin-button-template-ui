@@ -47,7 +47,6 @@ export class CanvasComponent implements ICanvasComponent {
     this.setupEventListeners();
 
     // Don't create session here - will be created by main app
-    console.log('Canvas component initialized, waiting for session...');
   }
 
   destroy(): void {
@@ -140,25 +139,17 @@ export class CanvasComponent implements ICanvasComponent {
   }
 
   private handleCanvasClick(event: MouseEvent): void {
-    console.log('Canvas clicked');
-
     const rect = this.canvasElement!.getBoundingClientRect();
     const x = (event.clientX - rect.left) / this.zoomLevel;
     const y = (event.clientY - rect.top) / this.zoomLevel;
 
-    console.log('Click position:', x, y);
-
     const buttonAreaId = this.findButtonAreaAtPosition(x, y);
-    console.log('Button area found at position:', buttonAreaId);
 
     if (buttonAreaId && this.buttonAreaClickCallback) {
       const buttonArea = this.getButtonArea(buttonAreaId);
       if (buttonArea) {
-        console.log('Triggering button area click callback');
         this.buttonAreaClickCallback(buttonArea);
       }
-    } else {
-      console.log('No button area at click position or no callback registered');
     }
   }
 
@@ -192,12 +183,7 @@ export class CanvasComponent implements ICanvasComponent {
   }
 
   private setupDefaultButtonAreas(): void {
-    if (!this.currentSession) {
-      console.error('No current session for default button areas');
-      return;
-    }
-
-    console.log('Setting up default button areas...');
+    if (!this.currentSession) return;
 
     // Create simple, safe button positions manually
     const buttonDiameter = 2.75;
@@ -213,10 +199,8 @@ export class CanvasComponent implements ICanvasComponent {
     ];
 
     // Create button areas with validation
-    safePositions.forEach((position, index) => {
+    safePositions.forEach(position => {
       try {
-        console.log(`Creating button area ${index + 1} at (${position.x}, ${position.y})`);
-
         const buttonArea = ButtonArea.createAt(
           this.currentSession!.id,
           position.x,
@@ -225,23 +209,17 @@ export class CanvasComponent implements ICanvasComponent {
         );
 
         this.currentSession!.addButtonArea(buttonArea);
-        console.log(`Button area ${index + 1} created successfully:`, buttonArea.id);
       } catch (error) {
-        console.error(`Failed to create button area ${index + 1}:`, error);
+        console.error('Failed to create button area:', error);
       }
     });
 
-    console.log(`Total button areas created: ${this.currentSession.getButtonAreaCount()}`);
     this.render();
   }
 
   // Session Management
   async loadSession(sessionData: SessionData): Promise<void> {
-    console.log('Loading session:', sessionData.id);
     this.currentSession = Session.fromData(sessionData);
-
-    // Note: Button areas should already be loaded in the session by the main app
-    // or we need to fetch them separately
     this.render();
   }
 
@@ -315,12 +293,7 @@ export class CanvasComponent implements ICanvasComponent {
 
   // Rendering
   render(): void {
-    if (!this.canvasElement || !this.currentSession) {
-      console.log('Cannot render: missing canvas or session');
-      return;
-    }
-
-    console.log('Rendering canvas with', this.currentSession.getButtonAreaCount(), 'button areas');
+    if (!this.canvasElement || !this.currentSession) return;
 
     // Clear existing button areas
     this.buttonAreaElements.forEach(element => {
@@ -332,14 +305,9 @@ export class CanvasComponent implements ICanvasComponent {
 
     // Render all button areas
     const buttonAreas = this.currentSession.getButtonAreas();
-    console.log('Button areas to render:', buttonAreas.length);
-
-    buttonAreas.forEach((buttonArea, index) => {
-      console.log(`Rendering button area ${index + 1}:`, buttonArea.id, `at (${buttonArea.x}, ${buttonArea.y})`);
+    buttonAreas.forEach(buttonArea => {
       this.renderButtonArea(buttonArea);
     });
-
-    console.log('Render complete. DOM elements created:', this.buttonAreaElements.size);
   }
 
   redraw(): void {
@@ -352,12 +320,7 @@ export class CanvasComponent implements ICanvasComponent {
   }
 
   private renderButtonArea(buttonArea: ButtonArea): void {
-    if (!this.canvasElement) {
-      console.error('Cannot render button area: no canvas element');
-      return;
-    }
-
-    console.log('Creating DOM element for button area:', buttonArea.id);
+    if (!this.canvasElement) return;
 
     const element = document.createElement('div');
     element.className = 'button-area';
@@ -438,18 +401,13 @@ export class CanvasComponent implements ICanvasComponent {
     const buttonArea = this.currentSession?.getButtonArea(buttonAreaId);
     if (!buttonArea?.imageAssetId) return;
 
-    console.log('Loading image for button area:', buttonAreaId);
-
     try {
       // Get the main app instance to access loaded images
       const app = (window as any).pinButtonApp as PinButtonApp;
       if (app) {
         const imageAsset = (app as any).loadedImageAssets.get(buttonArea.imageAssetId);
         if (imageAsset) {
-          console.log('Found image asset, updating display');
           this.displayImageInButtonElement(element, imageAsset, buttonArea);
-        } else {
-          console.log('Image asset not found in loaded assets');
         }
       }
     } catch (error) {
@@ -492,13 +450,6 @@ export class CanvasComponent implements ICanvasComponent {
     element.appendChild(imageContainer);
     element.style.backgroundColor = 'transparent';
     element.style.border = '2px solid #007bff';
-
-    console.log('Image displayed in button area with transform:', {
-      zoom: buttonArea.zoom,
-      cropX: buttonArea.cropX,
-      cropY: buttonArea.cropY,
-      rotation: buttonArea.rotation
-    });
   }
 
   // Utility methods for external use

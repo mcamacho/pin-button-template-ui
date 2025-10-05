@@ -71,7 +71,6 @@ export class PinButtonApp implements AppController {
       await this.initializeSession();
 
       this.isInitialized = true;
-      console.log('Pin Button Layout Designer initialized successfully');
 
     } catch (error) {
       console.error('Failed to initialize application:', error);
@@ -110,7 +109,6 @@ export class PinButtonApp implements AppController {
 
     // Canvas events
     this.canvasComponent.onButtonAreaClick((buttonArea) => {
-      console.log('Button area clicked:', buttonArea.id);
       this.showModal(buttonArea.id);
     });
 
@@ -124,7 +122,6 @@ export class PinButtonApp implements AppController {
 
     // Modal events
     this.modalComponent.onSave(async (formData) => {
-      console.log('Modal save triggered with data:', formData);
       await this.handleModalSave(formData);
     });
 
@@ -133,7 +130,6 @@ export class PinButtonApp implements AppController {
     });
 
     this.modalComponent.onImageChange(async (file) => {
-      console.log('Modal image change event triggered with file:', file?.name);
       if (file) {
         await this.handleImageUpload(file, this.modalComponent?.currentButtonAreaId);
       }
@@ -184,8 +180,6 @@ export class PinButtonApp implements AppController {
         this.currentSession.addButtonArea(buttonArea);
       }
 
-      console.log('New session ready with', this.currentSession.getButtonAreaCount(), 'button areas');
-
       if (this.canvasComponent) {
         // Set the canvas current session directly
         (this.canvasComponent as any).currentSession = this.currentSession;
@@ -203,8 +197,6 @@ export class PinButtonApp implements AppController {
   private async createDefaultButtonAreas(): Promise<void> {
     if (!this.currentSession) return;
 
-    console.log('Creating default button areas for new session...');
-
     // Create safe button positions
     const safePositions = [
       { x: 2.5, y: 2.5 }, // Top-left area
@@ -215,9 +207,9 @@ export class PinButtonApp implements AppController {
       { x: 6.0, y: 8.5 }, // Bottom-right
     ];
 
-    for (const [index, position] of safePositions.entries()) {
+    for (const position of safePositions) {
       try {
-        const buttonAreaData = await this.databaseService.createButtonArea({
+        await this.databaseService.createButtonArea({
           sessionId: this.currentSession.id,
           x: position.x,
           y: position.y,
@@ -228,14 +220,10 @@ export class PinButtonApp implements AppController {
           zoom: 1.0,
           rotation: 0.0
         });
-
-        console.log(`Default button area ${index + 1} created in database`);
       } catch (error) {
-        console.error(`Failed to create default button area ${index + 1}:`, error);
+        console.error('Failed to create default button area:', error);
       }
     }
-
-    console.log('Default button areas creation complete');
   }
 
   async saveSession(name: string): Promise<SessionData> {
@@ -261,7 +249,6 @@ export class PinButtonApp implements AppController {
 
   async loadSession(id: string): Promise<SessionData> {
     try {
-      console.log('Loading session from database:', id);
       const sessionData = await this.databaseService.getSession(id);
       if (!sessionData) {
         throw new Error('Session not found');
@@ -271,7 +258,6 @@ export class PinButtonApp implements AppController {
 
       // Load button areas from database and add to session
       const buttonAreas = await this.databaseService.getButtonAreasBySession(id);
-      console.log('Loaded button areas from database:', buttonAreas.length);
 
       // Clear existing button areas and add the loaded ones
       this.currentSession.clearButtonAreas();
@@ -280,13 +266,10 @@ export class PinButtonApp implements AppController {
         try {
           const buttonArea = ButtonArea.fromData(buttonAreaData);
           this.currentSession.addButtonArea(buttonArea);
-          console.log('Added button area to session:', buttonArea.id);
         } catch (error) {
           console.error('Failed to add button area to session:', error);
         }
       }
-
-      console.log('Session loaded with button areas:', this.currentSession.getButtonAreaCount());
 
       // Load associated images
       await this.preloadSessionImages();
@@ -295,7 +278,6 @@ export class PinButtonApp implements AppController {
       if (this.canvasComponent) {
         // Set the canvas current session directly
         (this.canvasComponent as any).currentSession = this.currentSession;
-        console.log('Canvas session updated with', this.currentSession.getButtonAreaCount(), 'button areas');
         this.canvasComponent.render();
       }
 
@@ -324,22 +306,18 @@ export class PinButtonApp implements AppController {
 
   // Image Management
   async handleImageUpload(file: File, buttonAreaId?: string): Promise<ImageAssetData> {
-    console.log('Handling image upload for file:', file.name, 'button area:', buttonAreaId);
-
     try {
       // Validate file
       const validation = await this.imageService.validateImageFile(file);
       if (!validation.isValid) {
         throw new Error(`Invalid image: ${validation.errors.join(', ')}`);
       }
-      console.log('File validation passed');
 
       // Load and process image
       const loadResult = await this.imageService.loadImageFromFile(file);
       if (!loadResult.success) {
         throw new Error(loadResult.error || 'Failed to load image');
       }
-      console.log('Image loaded successfully:', loadResult.width, 'x', loadResult.height);
 
       // Generate thumbnail
       const thumbnailUrl = await this.imageService.generateThumbnail(
@@ -347,7 +325,6 @@ export class PinButtonApp implements AppController {
         200,
         200
       );
-      console.log('Thumbnail generated');
 
       // Create image asset
       const imageData = await this.databaseService.createImageAsset({
@@ -359,25 +336,21 @@ export class PinButtonApp implements AppController {
         dataUrl: loadResult.imageData!,
         thumbnailUrl
       });
-      console.log('Image asset created in database:', imageData.id);
 
       const imageAsset = ImageAsset.fromData(imageData);
       this.loadedImageAssets.set(imageAsset.id, imageAsset);
 
       // Assign to button area if specified
       if (buttonAreaId && this.canvasComponent) {
-        console.log('Updating button area with image:', buttonAreaId);
         this.canvasComponent.updateButtonAreaImage(buttonAreaId, imageAsset);
         await this.databaseService.updateButtonArea(buttonAreaId, {
           imageAssetId: imageAsset.id
         });
-        console.log('Button area updated in database');
 
         // Update the modal display to show the new image
         if (this.modalComponent && this.currentSession) {
           const updatedButtonArea = this.currentSession.getButtonArea(buttonAreaId);
           if (updatedButtonArea) {
-            console.log('Reloading modal with updated button area data');
             this.modalComponent.loadButtonAreaData(updatedButtonArea.toData(), imageAsset.toData());
           }
         }
@@ -406,20 +379,11 @@ export class PinButtonApp implements AppController {
 
   // UI State Management
   async showModal(buttonAreaId: string): Promise<void> {
-    console.log('Attempting to show modal for button area:', buttonAreaId);
-
-    if (!this.modalComponent || !this.currentSession) {
-      console.error('Cannot show modal: missing component or session');
-      return;
-    }
+    if (!this.modalComponent || !this.currentSession) return;
 
     const buttonArea = this.currentSession.getButtonArea(buttonAreaId);
-    if (!buttonArea) {
-      console.error('Button area not found:', buttonAreaId);
-      return;
-    }
+    if (!buttonArea) return;
 
-    console.log('Loading button area data into modal');
     const imageAsset = buttonArea.imageAssetId ?
       this.loadedImageAssets.get(buttonArea.imageAssetId) : null;
 
@@ -428,7 +392,6 @@ export class PinButtonApp implements AppController {
       imageAsset?.toData()
     );
 
-    console.log('Showing modal...');
     await this.modalComponent.show(buttonAreaId);
   }
 
@@ -476,12 +439,7 @@ export class PinButtonApp implements AppController {
 
   // Event Handlers
   private async handleModalSave(formData: any): Promise<void> {
-    console.log('Handling modal save with form data:', formData);
-
-    if (!this.currentSession || !this.modalComponent?.currentButtonAreaId) {
-      console.error('Cannot save: no session or button area ID');
-      return;
-    }
+    if (!this.currentSession || !this.modalComponent?.currentButtonAreaId) return;
 
     const buttonAreaId = this.modalComponent.currentButtonAreaId;
 
@@ -495,8 +453,6 @@ export class PinButtonApp implements AppController {
         rotation: formData.rotation
       });
 
-      console.log('Button area updated in database with new settings');
-
       // Update local session
       const buttonArea = this.currentSession.getButtonArea(buttonAreaId);
       if (buttonArea) {
@@ -508,13 +464,10 @@ export class PinButtonApp implements AppController {
           rotation: formData.rotation
         });
 
-        console.log('Local session updated');
-
         // Update canvas display
         if (this.canvasComponent) {
           (this.canvasComponent as any).currentSession = this.currentSession;
           this.canvasComponent.render();
-          console.log('Canvas re-rendered with updated button area');
         }
       }
 

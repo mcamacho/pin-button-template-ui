@@ -62,9 +62,7 @@ export class ModalComponent implements IModalComponent {
   private imageChangeCallback: ((file: File | null) => void) | null = null;
 
   constructor() {
-    console.log('Creating modal component...');
     this.createElement();
-    console.log('Modal component created, element added to DOM');
   }
 
   private createElement(): void {
@@ -175,13 +173,6 @@ export class ModalComponent implements IModalComponent {
     this.element.appendChild(modal);
     document.body.appendChild(this.element);
 
-    console.log('Modal element appended to document.body');
-    console.log('Modal initial styles:', {
-      display: this.element.style.display,
-      position: this.element.style.position,
-      zIndex: this.element.style.zIndex
-    });
-
     this.bindElements();
     this.setupEventListeners();
   }
@@ -224,9 +215,7 @@ export class ModalComponent implements IModalComponent {
     // Form control handlers with real-time preview
     [this.cropXSlider, this.cropYSlider, this.zoomSlider, this.rotationSlider].forEach(slider => {
       if (slider) {
-        console.log('Adding event listeners to slider:', slider.id);
-        slider.addEventListener('input', (e) => {
-          console.log('Slider input event:', slider.id, 'value:', (e.target as HTMLInputElement).value);
+        slider.addEventListener('input', () => {
           this.updateSliderValues();
           this.updateImagePreview();
         });
@@ -247,12 +236,10 @@ export class ModalComponent implements IModalComponent {
 
   // Lifecycle methods
   async show(buttonAreaId: string): Promise<void> {
-    console.log('Modal show() called for button:', buttonAreaId);
     this.currentButtonAreaId = buttonAreaId;
     this.isOpen = true;
 
     if (this.element) {
-      console.log('Modal element exists, showing modal');
       this.element.style.display = 'flex';
       // Add fade-in animation
       this.element.style.opacity = '0';
@@ -260,17 +247,8 @@ export class ModalComponent implements IModalComponent {
         if (this.element) {
           this.element.style.transition = 'opacity 0.2s ease';
           this.element.style.opacity = '1';
-          console.log('Modal should now be visible');
-          console.log('Modal computed styles:', {
-            display: getComputedStyle(this.element).display,
-            opacity: getComputedStyle(this.element).opacity,
-            zIndex: getComputedStyle(this.element).zIndex,
-            position: getComputedStyle(this.element).position
-          });
         }
       }, 10);
-    } else {
-      console.error('Modal element not found!');
     }
   }
 
@@ -296,7 +274,6 @@ export class ModalComponent implements IModalComponent {
 
   // Data binding methods
   loadButtonAreaData(buttonArea: ButtonAreaData, imageAsset?: ImageAssetData): void {
-    console.log('Loading button area data into modal:', buttonArea.id, 'with image:', imageAsset?.filename);
     this.currentImageAsset = imageAsset || null;
 
     if (this.diameterInput) this.diameterInput.value = buttonArea.diameter.toString();
@@ -305,7 +282,6 @@ export class ModalComponent implements IModalComponent {
     if (this.zoomSlider) this.zoomSlider.value = buttonArea.zoom.toString();
     if (this.rotationSlider) this.rotationSlider.value = buttonArea.rotation.toString();
 
-    console.log('Form values loaded, updating display...');
     this.updateSliderValues();
     this.updateImageDisplay();
   }
@@ -350,17 +326,11 @@ export class ModalComponent implements IModalComponent {
   }
 
   private handleImageInputChange(event: Event): void {
-    console.log('Image input changed');
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    console.log('Selected file:', file?.name, file?.type);
-
     if (file && this.imageChangeCallback) {
-      console.log('Calling image change callback');
       this.imageChangeCallback(file);
-    } else {
-      console.log('No file or no callback registered');
     }
   }
 
@@ -421,8 +391,6 @@ export class ModalComponent implements IModalComponent {
   }
 
   private updateImageDisplay(): void {
-    console.log('Updating image display, current image asset:', this.currentImageAsset?.filename);
-
     // Show/hide image controls and preview
     const imageControls = this.element?.querySelector('.image-controls') as HTMLElement;
     const previewContainer = this.element?.querySelector('.image-preview-container') as HTMLElement;
@@ -430,25 +398,11 @@ export class ModalComponent implements IModalComponent {
     const removeButton = this.element?.querySelector('[data-testid="remove-image"]') as HTMLElement;
 
     if (this.currentImageAsset) {
-      console.log('Image asset exists, showing controls and preview');
-      if (imageControls) {
-        imageControls.style.display = 'block';
-        console.log('Image controls shown');
-      }
-      if (previewContainer) {
-        previewContainer.style.display = 'block';
-        console.log('Preview container shown');
-      }
-      if (previewImage) {
-        previewImage.src = this.currentImageAsset.thumbnailUrl;
-        console.log('Preview image src set to:', this.currentImageAsset.filename);
-      }
-      if (removeButton) {
-        removeButton.style.display = 'block';
-        console.log('Remove button shown');
-      }
+      if (imageControls) imageControls.style.display = 'block';
+      if (previewContainer) previewContainer.style.display = 'block';
+      if (previewImage) previewImage.src = this.currentImageAsset.thumbnailUrl;
+      if (removeButton) removeButton.style.display = 'block';
     } else {
-      console.log('No image asset, hiding controls');
       if (imageControls) imageControls.style.display = 'none';
       if (previewContainer) previewContainer.style.display = 'none';
       if (removeButton) removeButton.style.display = 'none';
@@ -456,26 +410,16 @@ export class ModalComponent implements IModalComponent {
   }
 
   private updateImagePreview(): void {
-    console.log('Updating image preview...');
-
-    if (!this.currentImageAsset) {
-      console.log('No image asset for preview update');
-      return;
-    }
+    if (!this.currentImageAsset) return;
 
     const previewImage = this.element?.querySelector('.preview-image') as HTMLImageElement;
-    if (!previewImage) {
-      console.log('Preview image element not found');
-      return;
-    }
+    if (!previewImage) return;
 
     // Get current form values
     const cropX = parseFloat(this.cropXSlider?.value || '0.5');
     const cropY = parseFloat(this.cropYSlider?.value || '0.5');
     const zoom = parseFloat(this.zoomSlider?.value || '1');
     const rotation = parseFloat(this.rotationSlider?.value || '0');
-
-    console.log('Applying transform:', { cropX, cropY, zoom, rotation });
 
     // Apply transform to preview image - fix positioning logic
     // The container clips to circle, image moves within it
@@ -497,8 +441,6 @@ export class ModalComponent implements IModalComponent {
       previewContainer.style.overflow = 'hidden';
       previewContainer.style.borderRadius = '50%';
     }
-
-    console.log('Preview image transform applied');
   }
 
   private validateDiameter(): void {

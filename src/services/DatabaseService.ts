@@ -48,7 +48,6 @@ export class DatabaseService implements DatabaseServiceInterface {
 
   async initialize(): Promise<void> {
     // For browser compatibility, using in-memory storage initially
-    console.log('Database initialized with in-memory storage');
     this.isInitialized = true;
   }
 

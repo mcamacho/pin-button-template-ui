@@ -12,7 +12,6 @@ export class DatabaseInitializer {
    * Initialize database (no-op for in-memory storage)
    */
   async initialize(): Promise<void> {
-    console.log('Database schema ready (in-memory storage)');
     this.isInitialized = true;
   }
 
