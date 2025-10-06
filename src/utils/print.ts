@@ -313,7 +313,7 @@ export class PrintUtils {
     paperSize: string,
     margins: { top: number; right: number; bottom: number; left: number },
     dpi: number,
-    colorMode: 'rgb' | 'cmyk'
+    _colorMode: 'rgb' | 'cmyk'
   ): string {
     const paper = this.PAPER_SIZES[paperSize.toLowerCase()];
     if (!paper) {

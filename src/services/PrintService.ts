@@ -84,10 +84,9 @@ export interface PrintService {
 
 export class PrintService implements PrintService {
   private currentPrintStyles: HTMLStyleElement | null = null;
-  private imageService: ImageService | null = null;
 
-  constructor(imageService?: ImageService) {
-    this.imageService = imageService || null;
+  constructor(_imageService?: ImageService) {
+    // ImageService not currently used, reserved for future use
   }
 
   async printSession(sessionId: string, config?: Partial<PrintConfiguration>): Promise<PrintResult> {
@@ -239,7 +238,7 @@ export class PrintService implements PrintService {
     `;
   }
 
-  private generatePrintHTML(sessionId: string, config: PrintConfiguration): string {
+  private generatePrintHTML(_sessionId: string, _config: PrintConfiguration): string {
     // This would typically fetch session data and button areas
     // For now, return a template structure
     return `
@@ -247,7 +246,7 @@ export class PrintService implements PrintService {
       <html>
         <head>
           <meta charset="utf-8">
-          <title>Pin Button Layout - Session ${sessionId}</title>
+          <title>Pin Button Layout - Session ${_sessionId}</title>
         </head>
         <body>
           <div class="print-container">
@@ -470,14 +469,14 @@ export class PrintService implements PrintService {
     }
   }
 
-  setupPrintStyles(config: PrintConfiguration): void {
+  setupPrintStyles(_config: PrintConfiguration): void {
     // Remove existing print styles
     this.cleanupPrintStyles();
 
     // Create new print style element
     this.currentPrintStyles = document.createElement('style');
     this.currentPrintStyles.setAttribute('data-print-styles', 'true');
-    this.currentPrintStyles.textContent = this.generatePrintCSS(config);
+    this.currentPrintStyles.textContent = this.generatePrintCSS(_config);
 
     document.head.appendChild(this.currentPrintStyles);
   }

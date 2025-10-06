@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'fs';
 import { join } from 'path';
 
 // T012: Integration test image drag and drop functionality
@@ -165,7 +164,6 @@ test.describe('Image Drag and Drop', () => {
     await fileInput.setInputFiles(largFilePath);
 
     // Should show loading indicator for large files
-    const loadingIndicator = page.locator('[data-testid="loading-indicator"]');
     // Loading indicator might appear briefly
 
     await page.waitForTimeout(2000);

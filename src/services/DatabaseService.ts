@@ -44,11 +44,9 @@ export class DatabaseService implements DatabaseServiceInterface {
   private buttonAreas: Map<string, ButtonAreaData> = new Map();
   private imageAssets: Map<string, ImageAssetData> = new Map();
   private printConfigs: Map<string, PrintConfigurationData> = new Map();
-  private isInitialized = false;
 
   async initialize(): Promise<void> {
     // For browser compatibility, using in-memory storage initially
-    this.isInitialized = true;
   }
 
   async close(): Promise<void> {
@@ -74,7 +72,7 @@ export class DatabaseService implements DatabaseServiceInterface {
     }
 
     const updated = { ...existing, ...updates, updatedAt: new Date() };
-    const session = Session.fromData(updated);
+    Session.fromData(updated); // Validate the data
     this.sessions.set(id, updated);
     return updated;
   }
@@ -124,7 +122,7 @@ export class DatabaseService implements DatabaseServiceInterface {
     }
 
     const updated = { ...existing, ...updates };
-    const buttonArea = ButtonArea.fromData(updated);
+    ButtonArea.fromData(updated); // Validate the data
     this.buttonAreas.set(id, updated);
     return updated;
   }
@@ -213,7 +211,7 @@ export class DatabaseService implements DatabaseServiceInterface {
     return configs[0] || null;
   }
 
-  async backup(filePath: string): Promise<boolean> {
+  async backup(_filePath: string): Promise<boolean> {
     try {
       // For in-memory storage, could save to localStorage
       const data = {
@@ -231,7 +229,7 @@ export class DatabaseService implements DatabaseServiceInterface {
     }
   }
 
-  async restore(filePath: string): Promise<boolean> {
+  async restore(_filePath: string): Promise<boolean> {
     try {
       const backupData = localStorage.getItem('pin-button-backup');
       if (!backupData) return false;

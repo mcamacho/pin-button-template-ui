@@ -1,7 +1,6 @@
 import { Session, SessionData } from '@/models/Session';
 import { ButtonArea, ButtonAreaData } from '@/models/ButtonArea';
 import { ImageAsset } from '@/models/ImageAsset';
-import { LayoutCalculator } from '@/utils/layout';
 
 export interface ICanvasComponent {
   // Lifecycle
@@ -180,41 +179,6 @@ export class CanvasComponent implements ICanvasComponent {
 
   private pixelsToInches(pixels: number): number {
     return pixels / 80;
-  }
-
-  private setupDefaultButtonAreas(): void {
-    if (!this.currentSession) return;
-
-    // Create simple, safe button positions manually
-    const buttonDiameter = 2.75;
-
-    // Calculate safe positions that will definitely fit
-    const safePositions = [
-      { x: 2.5, y: 2.5 }, // Top-left area
-      { x: 6.0, y: 2.5 }, // Top-right area
-      { x: 2.5, y: 5.5 }, // Middle-left
-      { x: 6.0, y: 5.5 }, // Middle-right
-      { x: 2.5, y: 8.5 }, // Bottom-left
-      { x: 6.0, y: 8.5 }, // Bottom-right
-    ];
-
-    // Create button areas with validation
-    safePositions.forEach(position => {
-      try {
-        const buttonArea = ButtonArea.createAt(
-          this.currentSession!.id,
-          position.x,
-          position.y,
-          buttonDiameter
-        );
-
-        this.currentSession!.addButtonArea(buttonArea);
-      } catch (error) {
-        console.error('Failed to create button area:', error);
-      }
-    });
-
-    this.render();
   }
 
   // Session Management
@@ -403,7 +367,7 @@ export class CanvasComponent implements ICanvasComponent {
 
     try {
       // Get the main app instance to access loaded images
-      const app = (window as any).pinButtonApp as PinButtonApp;
+      const app = (window as any).pinButtonApp;
       if (app) {
         const imageAsset = (app as any).loadedImageAssets.get(buttonArea.imageAssetId);
         if (imageAsset) {
@@ -504,7 +468,6 @@ export class CanvasComponent implements ICanvasComponent {
   autoArrangeButtons(): void {
     if (!this.currentSession) return;
 
-    const pageSize = { width: 8.5, height: 11.0 };
     this.currentSession.autoArrangeButtons();
     this.render();
     this.notifyLayoutChange();

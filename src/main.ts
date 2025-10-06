@@ -1,6 +1,5 @@
 import { DatabaseService } from '@/services/DatabaseService';
 import { ImageService } from '@/services/ImageService';
-import { PrintService } from '@/services/PrintService';
 import { CanvasComponent } from '@/components/Canvas';
 import { ModalComponent } from '@/components/Modal';
 import { PrintButtonComponentImpl } from '@/components/PrintButton';
@@ -36,7 +35,6 @@ export class PinButtonApp implements AppController {
   // Services
   private databaseService: DatabaseService;
   private imageService: ImageService;
-  private printService: PrintService;
 
   // Components
   private canvasComponent: CanvasComponent | null = null;
@@ -51,7 +49,6 @@ export class PinButtonApp implements AppController {
   constructor() {
     this.databaseService = new DatabaseService();
     this.imageService = new ImageService();
-    this.printService = new PrintService(this.imageService);
   }
 
   async initialize(): Promise<void> {
@@ -113,7 +110,7 @@ export class PinButtonApp implements AppController {
     });
 
     this.canvasComponent.onImageDrop(async (files, buttonAreaId) => {
-      await this.handleImageDrop(files, buttonAreaId);
+      await this.handleImageDrop(files, buttonAreaId ?? undefined);
     });
 
     this.canvasComponent.onLayoutChange((session) => {
@@ -131,7 +128,7 @@ export class PinButtonApp implements AppController {
 
     this.modalComponent.onImageChange(async (file) => {
       if (file) {
-        await this.handleImageUpload(file, this.modalComponent?.currentButtonAreaId);
+        await this.handleImageUpload(file, this.modalComponent?.currentButtonAreaId ?? undefined);
       }
     });
 

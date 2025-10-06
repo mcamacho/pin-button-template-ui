@@ -48,10 +48,6 @@ test.describe('Application Launch', () => {
   test('should display clean minimal interface with print button', async ({ page }) => {
     await page.goto('/');
 
-    // Verify clean, minimal interface
-    const header = page.locator('[data-testid="app-header"]');
-    const sidebar = page.locator('[data-testid="sidebar"]');
-
     // Should not have cluttered UI
     await expect(page.locator('nav')).toHaveCount(0); // No complex navigation
 
@@ -76,7 +72,8 @@ test.describe('Application Launch', () => {
     await expect(canvas).toBeVisible();
 
     // Verify page has visible outline/border
-    await expect(canvas).toHaveCSS('border-width', expect.stringMatching(/[1-9]/));
+    const borderWidth = await canvas.evaluate(el => getComputedStyle(el).borderWidth);
+    expect(borderWidth).toMatch(/[1-9]/);
 
     // Should show page size indicator or ruler
     const pageInfo = page.locator('[data-testid="page-info"]');

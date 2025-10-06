@@ -77,7 +77,6 @@ test.describe('Configuration Modal', () => {
     await expect(uploadButton).toBeVisible();
 
     // Should have remove image option if image exists
-    const removeButton = modal.locator('[data-testid="remove-image"]');
     // Remove button visibility depends on whether image is loaded
   });
 

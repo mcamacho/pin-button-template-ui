@@ -93,7 +93,7 @@ export class LayoutCalculator {
   static generateGridPositions(
     grid: LayoutGrid,
     buttonCount: number,
-    pageSize: PageDimensions
+    _pageSize: PageDimensions
   ): ButtonPosition[] {
     const positions: ButtonPosition[] = [];
 
@@ -128,7 +128,7 @@ export class LayoutCalculator {
   static autoArrangeButtons(
     buttonAreas: ButtonArea[],
     pageSize: PageDimensions,
-    preserveImages: boolean = true
+    _preserveImages: boolean = true
   ): ButtonArea[] {
     if (buttonAreas.length === 0) return [];
 
@@ -226,7 +226,7 @@ export class LayoutCalculator {
   /**
    * Calculate minimum spacing needed between buttons
    */
-  static calculateMinimumSpacing(buttonDiameter: number, printQuality: 'draft' | 'standard' | 'high' = 'standard'): number {
+  static calculateMinimumSpacing(_buttonDiameter: number, printQuality: 'draft' | 'standard' | 'high' = 'standard'): number {
     const baseSpacing = 0.125; // 1/8 inch minimum
 
     switch (printQuality) {

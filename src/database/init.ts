@@ -2,8 +2,6 @@
  * Initialize database with in-memory storage for browser
  */
 export class DatabaseInitializer {
-  private isInitialized = false;
-
   constructor() {
     // Browser-compatible initialization
   }
@@ -12,7 +10,7 @@ export class DatabaseInitializer {
    * Initialize database (no-op for in-memory storage)
    */
   async initialize(): Promise<void> {
-    this.isInitialized = true;
+    // No-op for in-memory storage
   }
 
   /**
@@ -26,6 +24,6 @@ export class DatabaseInitializer {
    * Close database connection (no-op for in-memory)
    */
   close(): void {
-    this.isInitialized = false;
+    // No-op for in-memory storage
   }
 }

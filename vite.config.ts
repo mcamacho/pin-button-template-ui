@@ -2,6 +2,9 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
 export default defineConfig({
+  root: '.',
+  publicDir: 'public',
+  base: './',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -14,7 +17,11 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
+    emptyOutDir: true,
     sourcemap: true,
+    rollupOptions: {
+      input: resolve(__dirname, 'index.html')
+    }
   },
   test: {
     globals: true,

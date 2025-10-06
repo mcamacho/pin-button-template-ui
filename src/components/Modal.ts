@@ -1,6 +1,5 @@
 import { ButtonAreaData } from '@/models/ButtonArea';
 import { ImageAssetData } from '@/models/ImageAsset';
-import { ModelValidator } from '@/utils/validation';
 
 export interface ModalFormData {
   diameter: number;
@@ -54,8 +53,6 @@ export class ModalComponent implements IModalComponent {
   private zoomSlider: HTMLInputElement | null = null;
   private rotationSlider: HTMLInputElement | null = null;
   private imageInput: HTMLInputElement | null = null;
-  private previewContainer: HTMLElement | null = null;
-
   // Event callbacks
   private saveCallback: ((formData: ModalFormData) => void) | null = null;
   private cancelCallback: (() => void) | null = null;
@@ -186,7 +183,6 @@ export class ModalComponent implements IModalComponent {
     this.zoomSlider = this.element.querySelector('#zoom-slider') as HTMLInputElement;
     this.rotationSlider = this.element.querySelector('#rotation-slider') as HTMLInputElement;
     this.imageInput = this.element.querySelector('#image-file-input') as HTMLInputElement;
-    this.previewContainer = this.element.querySelector('.image-preview-container') as HTMLElement;
   }
 
   private setupEventListeners(): void {
