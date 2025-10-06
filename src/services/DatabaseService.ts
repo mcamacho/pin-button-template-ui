@@ -2,6 +2,7 @@ import { Session, SessionData } from '@/models/Session';
 import { ButtonArea, ButtonAreaData } from '@/models/ButtonArea';
 import { ImageAsset, ImageAssetData } from '@/models/ImageAsset';
 import { PrintConfiguration, PrintConfigurationData } from '@/models/PrintConfiguration';
+import { LocalStorageAdapter } from '@/utils/storage';
 
 interface DatabaseServiceInterface {
   // Session Management
@@ -39,14 +40,19 @@ interface DatabaseServiceInterface {
 }
 
 export class DatabaseService implements DatabaseServiceInterface {
-  // In-memory storage (will be replaced with proper SQLite later)
-  private sessions: Map<string, SessionData> = new Map();
+  // localStorage-backed storage for sessions (persists across page refreshes)
+  private sessionStorage: LocalStorageAdapter<SessionData>;
+  // In-memory storage for other entities (out of scope for this feature)
   private buttonAreas: Map<string, ButtonAreaData> = new Map();
   private imageAssets: Map<string, ImageAssetData> = new Map();
   private printConfigs: Map<string, PrintConfigurationData> = new Map();
 
+  constructor() {
+    this.sessionStorage = new LocalStorageAdapter<SessionData>('session');
+  }
+
   async initialize(): Promise<void> {
-    // For browser compatibility, using in-memory storage initially
+    // localStorage adapter is ready to use immediately
   }
 
   async close(): Promise<void> {
@@ -57,29 +63,49 @@ export class DatabaseService implements DatabaseServiceInterface {
   async createSession(sessionData: Omit<SessionData, 'id' | 'createdAt' | 'updatedAt'>): Promise<SessionData> {
     const session = new Session(sessionData);
     const data = session.toData();
-    this.sessions.set(data.id, data);
+
+    try {
+      this.sessionStorage.set(data.id, data);
+    } catch (error: any) {
+      if (error.message && error.message.includes('Storage quota exceeded')) {
+        console.error('Storage quota exceeded:', error);
+        throw new Error('Storage quota exceeded. Please delete old sessions to free up space.');
+      }
+      throw error;
+    }
+
     return data;
   }
 
   async getSession(id: string): Promise<SessionData | null> {
-    return this.sessions.get(id) || null;
+    return this.sessionStorage.get(id);
   }
 
   async updateSession(id: string, updates: Partial<SessionData>): Promise<SessionData> {
-    const existing = this.sessions.get(id);
+    const existing = this.sessionStorage.get(id);
     if (!existing) {
       throw new Error(`Session ${id} not found`);
     }
 
     const updated = { ...existing, ...updates, updatedAt: new Date() };
     Session.fromData(updated); // Validate the data
-    this.sessions.set(id, updated);
+
+    try {
+      this.sessionStorage.set(id, updated);
+    } catch (error: any) {
+      if (error.message && error.message.includes('Storage quota exceeded')) {
+        console.error('Storage quota exceeded:', error);
+        throw new Error('Storage quota exceeded. Please delete old sessions to free up space.');
+      }
+      throw error;
+    }
+
     return updated;
   }
 
   async deleteSession(id: string): Promise<boolean> {
-    const existed = this.sessions.has(id);
-    this.sessions.delete(id);
+    const existed = this.sessionStorage.has(id);
+    this.sessionStorage.delete(id);
 
     // Also delete associated button areas
     for (const [buttonId, buttonArea] of this.buttonAreas) {
@@ -92,7 +118,15 @@ export class DatabaseService implements DatabaseServiceInterface {
   }
 
   async listSessions(includeTemporary = false): Promise<SessionData[]> {
-    const sessions = Array.from(this.sessions.values());
+    const sessionIds = this.sessionStorage.keys();
+    const sessions: SessionData[] = [];
+
+    for (const id of sessionIds) {
+      const session = this.sessionStorage.get(id);
+      if (session) {
+        sessions.push(session);
+      }
+    }
 
     if (includeTemporary) {
       return sessions.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
@@ -213,9 +247,9 @@ export class DatabaseService implements DatabaseServiceInterface {
 
   async backup(_filePath: string): Promise<boolean> {
     try {
-      // For in-memory storage, could save to localStorage
+      // Sessions are already in localStorage
+      // For other entities, save to backup storage
       const data = {
-        sessions: Array.from(this.sessions.entries()),
         buttonAreas: Array.from(this.buttonAreas.entries()),
         imageAssets: Array.from(this.imageAssets.entries()),
         printConfigs: Array.from(this.printConfigs.entries())
@@ -235,7 +269,7 @@ export class DatabaseService implements DatabaseServiceInterface {
       if (!backupData) return false;
 
       const data = JSON.parse(backupData);
-      this.sessions = new Map(data.sessions);
+      // Sessions are restored from localStorage automatically
       this.buttonAreas = new Map(data.buttonAreas);
       this.imageAssets = new Map(data.imageAssets);
       this.printConfigs = new Map(data.printConfigs);

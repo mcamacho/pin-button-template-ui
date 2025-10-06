@@ -1,0 +1,95 @@
+# GitHub Actions Workflow Contract
+# This file defines the expected structure and behavior of the deployment workflow
+
+name: Deploy to GitHub Pages
+
+# Trigger contract
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+
+# Required permissions
+permissions:
+  contents: read      # Read repository contents
+  pages: write        # Deploy to GitHub Pages
+  id-token: write     # OIDC token for deployment
+
+# Prevent concurrent deployments
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Environment configuration
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Build application (GATE: must succeed)
+      - name: Build
+        run: npm run build
+
+      # Step 5: Configure GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      # Step 6: Upload artifacts (only if build succeeded)
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      # Step 7: Deploy to GitHub Pages (only if upload succeeded)
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+# Expected Behavior:
+# - Triggers automatically on push to main branch when source files change
+# - Installs dependencies using exact versions from package-lock.json (npm ci)
+# - Builds application using Vite (npm run build)
+# - If build fails: workflow stops, deployment does not occur, previous version remains live
+# - If build succeeds: uploads dist/ folder as artifact
+# - Deploys artifact to GitHub Pages
+# - Deployment URL available at ${{ steps.deployment.outputs.page_url }}
+# - Concurrent runs are prevented (only latest deployment runs)
+
+# Success Criteria:
+# ✅ Workflow completes successfully
+# ✅ Build step exits with code 0
+# ✅ dist/ directory contains index.html and assets/
+# ✅ Deployment step outputs page_url
+# ✅ Application accessible at page_url
+# ✅ All relative paths resolve correctly
+
+# Failure Scenarios:
+# ❌ Build fails (npm run build exits non-zero) → Deployment halts
+# ❌ Upload fails → Deployment halts
+# ❌ Deploy fails → Previous version remains live
