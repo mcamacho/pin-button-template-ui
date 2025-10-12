@@ -137,11 +137,149 @@ export class PinButtonApp implements AppController {
       await this.printCurrentSession();
     });
 
+    // UI Button handlers
+    this.setupUIButtons();
+
     // Global keyboard handler for Ctrl+P
     document.addEventListener('keydown', this.handleGlobalKeydown.bind(this));
 
     // Global keyboard shortcuts
     document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
+  }
+
+  private setupUIButtons(): void {
+    // New Session button
+    const newSessionBtn = document.getElementById('new-session-btn');
+    if (newSessionBtn) {
+      newSessionBtn.addEventListener('click', async () => {
+        if (confirm('Create a new session? Any unsaved changes will be lost.')) {
+          await this.createNewSession();
+          this.updateSessionIndicator();
+        }
+      });
+    }
+
+    // Save Session button
+    const saveSessionBtn = document.getElementById('save-session-btn');
+    if (saveSessionBtn) {
+      saveSessionBtn.addEventListener('click', () => {
+        this.promptSaveSession();
+      });
+    }
+
+    // Session selector
+    const sessionSelect = document.getElementById('session-select') as HTMLSelectElement;
+    if (sessionSelect) {
+      sessionSelect.addEventListener('change', async (event) => {
+        const target = event.target as HTMLSelectElement;
+        if (target.value) {
+          await this.loadSession(target.value);
+          this.updateSessionIndicator();
+          // Reset the select to placeholder
+          target.value = '';
+        }
+      });
+      // Populate session list
+      this.updateSessionList();
+    }
+
+    // Auto-arrange button
+    const autoArrangeBtn = document.getElementById('auto-arrange-btn');
+    if (autoArrangeBtn) {
+      autoArrangeBtn.addEventListener('click', () => {
+        if (this.canvasComponent) {
+          this.canvasComponent.autoArrangeButtons();
+          this.updateButtonCount();
+        }
+      });
+    }
+
+    // Clear all button
+    const clearAllBtn = document.getElementById('clear-all-btn');
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', () => {
+        if (confirm('Clear all buttons? This cannot be undone.')) {
+          if (this.canvasComponent) {
+            this.canvasComponent.clearAllButtons();
+            this.updateButtonCount();
+          }
+        }
+      });
+    }
+
+    // Zoom controls
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const zoomDisplay = document.getElementById('zoom-display');
+
+    if (zoomInBtn && this.canvasComponent) {
+      zoomInBtn.addEventListener('click', () => {
+        const currentZoom = (this.canvasComponent as any).zoomLevel || 1.0;
+        const newZoom = Math.min(3.0, currentZoom + 0.1);
+        this.canvasComponent!.setZoom(newZoom);
+        if (zoomDisplay) {
+          zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
+        }
+      });
+    }
+
+    if (zoomOutBtn && this.canvasComponent) {
+      zoomOutBtn.addEventListener('click', () => {
+        const currentZoom = (this.canvasComponent as any).zoomLevel || 1.0;
+        const newZoom = Math.max(0.5, currentZoom - 0.1);
+        this.canvasComponent!.setZoom(newZoom);
+        if (zoomDisplay) {
+          zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
+        }
+      });
+    }
+  }
+
+  private updateSessionIndicator(): void {
+    const indicator = document.getElementById('session-indicator');
+    if (indicator && this.currentSession) {
+      if (this.currentSession.isTemporary) {
+        indicator.textContent = 'Temporary Session';
+        indicator.className = 'session-indicator session-temporary';
+      } else if (this.currentSession.name) {
+        indicator.textContent = this.currentSession.name;
+        indicator.className = 'session-indicator session-named';
+      }
+    }
+  }
+
+  private async updateSessionList(): Promise<void> {
+    const sessionSelect = document.getElementById('session-select') as HTMLSelectElement;
+    if (!sessionSelect) return;
+
+    try {
+      const sessions = await this.databaseService.listSessions(false);
+      
+      // Clear existing options except the first placeholder
+      while (sessionSelect.options.length > 1) {
+        sessionSelect.remove(1);
+      }
+
+      // Add sessions
+      for (const session of sessions) {
+        if (session.name) {
+          const option = document.createElement('option');
+          option.value = session.id;
+          option.textContent = session.name;
+          sessionSelect.appendChild(option);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load session list:', error);
+    }
+  }
+
+  private updateButtonCount(): void {
+    const buttonCountEl = document.getElementById('button-count');
+    if (buttonCountEl && this.currentSession) {
+      const count = this.currentSession.getButtonAreaCount();
+      buttonCountEl.textContent = `${count} button${count !== 1 ? 's' : ''}`;
+    }
   }
 
   private async initializeSession(): Promise<void> {
@@ -154,6 +292,11 @@ export class PinButtonApp implements AppController {
     } else {
       await this.createNewSession();
     }
+
+    // Update initial UI state
+    this.updateSessionIndicator();
+    this.updateButtonCount();
+    this.updateSessionList();
   }
 
   // Session Management
@@ -185,6 +328,13 @@ export class PinButtonApp implements AppController {
         (this.canvasComponent as any).currentSession = this.currentSession;
         this.canvasComponent.render();
       }
+
+      // Update UI
+      this.updateSessionIndicator();
+      this.updateButtonCount();
+      this.updateSessionList();
+      
+      this.showSuccess('New session created');
 
       return this.currentSession.toData();
     } catch (error) {
@@ -280,6 +430,12 @@ export class PinButtonApp implements AppController {
         (this.canvasComponent as any).currentSession = this.currentSession;
         this.canvasComponent.render();
       }
+
+      // Update UI
+      this.updateSessionIndicator();
+      this.updateButtonCount();
+      
+      this.showSuccess(`Session loaded: ${sessionData.name || 'Temporary'}`);
 
       return this.currentSession.toData();
     } catch (error) {
@@ -463,6 +619,7 @@ export class PinButtonApp implements AppController {
         }
       }
 
+      this.updateButtonCount();
       this.showSuccess('Button settings saved successfully');
       await this.hideModal();
 
@@ -528,7 +685,9 @@ export class PinButtonApp implements AppController {
   private promptSaveSession(): void {
     const name = prompt('Enter session name:');
     if (name) {
-      this.saveSession(name);
+      this.saveSession(name).then(() => {
+        this.updateSessionList();
+      });
     }
   }
 
