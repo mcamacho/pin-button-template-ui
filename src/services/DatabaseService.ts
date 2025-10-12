@@ -42,13 +42,17 @@ interface DatabaseServiceInterface {
 export class DatabaseService implements DatabaseServiceInterface {
   // localStorage-backed storage for sessions (persists across page refreshes)
   private sessionStorage: LocalStorageAdapter<SessionData>;
-  // In-memory storage for other entities (out of scope for this feature)
-  private buttonAreas: Map<string, ButtonAreaData> = new Map();
-  private imageAssets: Map<string, ImageAssetData> = new Map();
+  // localStorage-backed storage for image assets (persists across page refreshes)
+  private imageAssetStorage: LocalStorageAdapter<ImageAssetData>;
+  // localStorage-backed storage for button areas (persists across page refreshes)
+  private buttonAreaStorage: LocalStorageAdapter<ButtonAreaData>;
+  // In-memory storage for other entities
   private printConfigs: Map<string, PrintConfigurationData> = new Map();
 
   constructor() {
     this.sessionStorage = new LocalStorageAdapter<SessionData>('session');
+    this.imageAssetStorage = new LocalStorageAdapter<ImageAssetData>('imageAsset');
+    this.buttonAreaStorage = new LocalStorageAdapter<ButtonAreaData>('buttonArea');
   }
 
   async initialize(): Promise<void> {
@@ -108,9 +112,11 @@ export class DatabaseService implements DatabaseServiceInterface {
     this.sessionStorage.delete(id);
 
     // Also delete associated button areas
-    for (const [buttonId, buttonArea] of this.buttonAreas) {
-      if (buttonArea.sessionId === id) {
-        this.buttonAreas.delete(buttonId);
+    const buttonAreaKeys = this.buttonAreaStorage.keys();
+    for (const buttonId of buttonAreaKeys) {
+      const buttonArea = this.buttonAreaStorage.get(buttonId);
+      if (buttonArea && buttonArea.sessionId === id) {
+        this.buttonAreaStorage.delete(buttonId);
       }
     }
 
@@ -141,65 +147,83 @@ export class DatabaseService implements DatabaseServiceInterface {
   async createButtonArea(buttonAreaData: Omit<ButtonAreaData, 'id'>): Promise<ButtonAreaData> {
     const buttonArea = new ButtonArea(buttonAreaData);
     const data = buttonArea.toData();
-    this.buttonAreas.set(data.id, data);
+    this.buttonAreaStorage.set(data.id, data);
     return data;
   }
 
   async getButtonArea(id: string): Promise<ButtonAreaData | null> {
-    return this.buttonAreas.get(id) || null;
+    return this.buttonAreaStorage.get(id);
   }
 
   async updateButtonArea(id: string, updates: Partial<ButtonAreaData>): Promise<ButtonAreaData> {
-    const existing = this.buttonAreas.get(id);
+    const existing = this.buttonAreaStorage.get(id);
     if (!existing) {
       throw new Error(`ButtonArea ${id} not found`);
     }
 
     const updated = { ...existing, ...updates };
     ButtonArea.fromData(updated); // Validate the data
-    this.buttonAreas.set(id, updated);
+    this.buttonAreaStorage.set(id, updated);
     return updated;
   }
 
   async deleteButtonArea(id: string): Promise<boolean> {
-    return this.buttonAreas.delete(id);
+    return this.buttonAreaStorage.delete(id);
   }
 
   async getButtonAreasBySession(sessionId: string): Promise<ButtonAreaData[]> {
-    return Array.from(this.buttonAreas.values())
-      .filter(ba => ba.sessionId === sessionId)
-      .sort((a, b) => a.y - b.y || a.x - b.x);
+    const allKeys = this.buttonAreaStorage.keys();
+    const buttonAreas: ButtonAreaData[] = [];
+    
+    for (const key of allKeys) {
+      const buttonArea = this.buttonAreaStorage.get(key);
+      if (buttonArea && buttonArea.sessionId === sessionId) {
+        buttonAreas.push(buttonArea);
+      }
+    }
+    
+    return buttonAreas.sort((a, b) => a.y - b.y || a.x - b.x);
   }
 
   // Image Asset Management
   async createImageAsset(imageData: Omit<ImageAssetData, 'id' | 'uploadedAt' | 'lastUsedAt'>): Promise<ImageAssetData> {
     const imageAsset = new ImageAsset(imageData);
     const data = imageAsset.toData();
-    this.imageAssets.set(data.id, data);
+    this.imageAssetStorage.set(data.id, data);
     return data;
   }
 
   async getImageAsset(id: string): Promise<ImageAssetData | null> {
-    return this.imageAssets.get(id) || null;
+    return this.imageAssetStorage.get(id);
   }
 
   async updateImageAsset(id: string, updates: Partial<ImageAssetData>): Promise<ImageAssetData> {
-    const existing = this.imageAssets.get(id);
+    const existing = this.imageAssetStorage.get(id);
     if (!existing) {
       throw new Error(`ImageAsset ${id} not found`);
     }
 
     const updated = { ...existing, ...updates };
-    this.imageAssets.set(id, updated);
+    this.imageAssetStorage.set(id, updated);
     return updated;
   }
 
   async deleteImageAsset(id: string): Promise<boolean> {
-    return this.imageAssets.delete(id);
+    return this.imageAssetStorage.delete(id);
   }
 
   async getImageAssetsByUsage(limit = 50): Promise<ImageAssetData[]> {
-    return Array.from(this.imageAssets.values())
+    const allKeys = this.imageAssetStorage.keys();
+    const imageAssets: ImageAssetData[] = [];
+    
+    for (const key of allKeys) {
+      const imageAsset = this.imageAssetStorage.get(key);
+      if (imageAsset) {
+        imageAssets.push(imageAsset);
+      }
+    }
+    
+    return imageAssets
       .sort((a, b) => b.lastUsedAt.getTime() - a.lastUsedAt.getTime())
       .slice(0, limit);
   }
@@ -208,16 +232,25 @@ export class DatabaseService implements DatabaseServiceInterface {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-    const usedImageIds = new Set(
-      Array.from(this.buttonAreas.values())
-        .map(ba => ba.imageAssetId)
-        .filter(id => id !== null)
-    );
+    // Get all button areas to find used image IDs
+    const buttonAreaKeys = this.buttonAreaStorage.keys();
+    const usedImageIds = new Set<string>();
+    
+    for (const key of buttonAreaKeys) {
+      const buttonArea = this.buttonAreaStorage.get(key);
+      if (buttonArea?.imageAssetId) {
+        usedImageIds.add(buttonArea.imageAssetId);
+      }
+    }
 
+    // Delete unused images
     let deletedCount = 0;
-    for (const [id, asset] of this.imageAssets) {
-      if (!usedImageIds.has(id) && asset.lastUsedAt < cutoffDate) {
-        this.imageAssets.delete(id);
+    const imageKeys = this.imageAssetStorage.keys();
+    
+    for (const id of imageKeys) {
+      const asset = this.imageAssetStorage.get(id);
+      if (asset && !usedImageIds.has(id) && asset.lastUsedAt < cutoffDate) {
+        this.imageAssetStorage.delete(id);
         deletedCount++;
       }
     }
@@ -247,11 +280,9 @@ export class DatabaseService implements DatabaseServiceInterface {
 
   async backup(_filePath: string): Promise<boolean> {
     try {
-      // Sessions are already in localStorage
-      // For other entities, save to backup storage
+      // Sessions, buttonAreas, and imageAssets are already in localStorage
+      // For print configs, save to backup storage
       const data = {
-        buttonAreas: Array.from(this.buttonAreas.entries()),
-        imageAssets: Array.from(this.imageAssets.entries()),
         printConfigs: Array.from(this.printConfigs.entries())
       };
 
@@ -269,9 +300,7 @@ export class DatabaseService implements DatabaseServiceInterface {
       if (!backupData) return false;
 
       const data = JSON.parse(backupData);
-      // Sessions are restored from localStorage automatically
-      this.buttonAreas = new Map(data.buttonAreas);
-      this.imageAssets = new Map(data.imageAssets);
+      // Sessions, buttonAreas, and imageAssets are restored from localStorage automatically
       this.printConfigs = new Map(data.printConfigs);
 
       return true;
