@@ -67,7 +67,7 @@ export class CanvasComponent implements ICanvasComponent {
     // Create main canvas element
     this.canvasElement = document.createElement('div');
     this.canvasElement.className = 'pin-canvas';
-    this.canvasElement.setAttribute('data-testid', 'canvas-container');
+    this.canvasElement.setAttribute('data-testid', 'pin-canvas');
 
     // Apply Letter page styling
     this.applyCanvasStyles();

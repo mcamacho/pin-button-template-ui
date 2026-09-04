@@ -48,6 +48,18 @@ export class ButtonAreaComponentImpl implements ButtonAreaComponent {
   private isHovered: boolean = false;
   private isDragging: boolean = false;
 
+  // Bound once so addEventListener/removeEventListener see the same reference.
+  private readonly boundHandlers = {
+    click: (e: Event) => this.handleClick(e as MouseEvent),
+    dblclick: (e: Event) => this.handleDoubleClick(e as MouseEvent),
+    mouseenter: () => this.handleMouseEnter(),
+    mouseleave: () => this.handleMouseLeave(),
+    dragover: (e: Event) => this.handleDragOver(e as DragEvent),
+    dragenter: (e: Event) => this.handleDragEnter(e as DragEvent),
+    dragleave: (e: Event) => this.handleDragLeave(e as DragEvent),
+    drop: (e: Event) => this.handleDrop(e as DragEvent),
+  };
+
   // Event callbacks
   private clickCallback: ((buttonArea: ButtonAreaComponent) => void) | null = null;
   private doubleClickCallback: ((buttonArea: ButtonAreaComponent) => void) | null = null;
@@ -94,18 +106,18 @@ export class ButtonAreaComponentImpl implements ButtonAreaComponent {
 
   private setupEventListeners(): void {
     // Click handling
-    this.element.addEventListener('click', this.handleClick.bind(this));
-    this.element.addEventListener('dblclick', this.handleDoubleClick.bind(this));
+    this.element.addEventListener('click', this.boundHandlers.click);
+    this.element.addEventListener('dblclick', this.boundHandlers.dblclick);
 
     // Hover handling
-    this.element.addEventListener('mouseenter', this.handleMouseEnter.bind(this));
-    this.element.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
+    this.element.addEventListener('mouseenter', this.boundHandlers.mouseenter);
+    this.element.addEventListener('mouseleave', this.boundHandlers.mouseleave);
 
     // Drag and drop handling
-    this.element.addEventListener('dragover', this.handleDragOver.bind(this));
-    this.element.addEventListener('dragenter', this.handleDragEnter.bind(this));
-    this.element.addEventListener('dragleave', this.handleDragLeave.bind(this));
-    this.element.addEventListener('drop', this.handleDrop.bind(this));
+    this.element.addEventListener('dragover', this.boundHandlers.dragover);
+    this.element.addEventListener('dragenter', this.boundHandlers.dragenter);
+    this.element.addEventListener('dragleave', this.boundHandlers.dragleave);
+    this.element.addEventListener('drop', this.boundHandlers.drop);
   }
 
   private handleClick(event: MouseEvent): void {
@@ -429,14 +441,14 @@ export class ButtonAreaComponentImpl implements ButtonAreaComponent {
   // Lifecycle
   destroy(): void {
     // Remove event listeners
-    this.element.removeEventListener('click', this.handleClick.bind(this));
-    this.element.removeEventListener('dblclick', this.handleDoubleClick.bind(this));
-    this.element.removeEventListener('mouseenter', this.handleMouseEnter.bind(this));
-    this.element.removeEventListener('mouseleave', this.handleMouseLeave.bind(this));
-    this.element.removeEventListener('dragover', this.handleDragOver.bind(this));
-    this.element.removeEventListener('dragenter', this.handleDragEnter.bind(this));
-    this.element.removeEventListener('dragleave', this.handleDragLeave.bind(this));
-    this.element.removeEventListener('drop', this.handleDrop.bind(this));
+    this.element.removeEventListener('click', this.boundHandlers.click);
+    this.element.removeEventListener('dblclick', this.boundHandlers.dblclick);
+    this.element.removeEventListener('mouseenter', this.boundHandlers.mouseenter);
+    this.element.removeEventListener('mouseleave', this.boundHandlers.mouseleave);
+    this.element.removeEventListener('dragover', this.boundHandlers.dragover);
+    this.element.removeEventListener('dragenter', this.boundHandlers.dragenter);
+    this.element.removeEventListener('dragleave', this.boundHandlers.dragleave);
+    this.element.removeEventListener('drop', this.boundHandlers.drop);
 
     // Remove from DOM if present
     if (this.element.parentNode) {

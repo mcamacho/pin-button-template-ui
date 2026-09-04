@@ -11,7 +11,7 @@ test.describe('Application Launch', () => {
     await expect(page).toHaveTitle(/Pin Button Layout Designer/);
 
     // Verify Letter-sized page canvas (8.5" x 11") is displayed
-    const canvas = page.locator('[data-testid="canvas-container"]');
+    const canvas = page.locator('[data-testid="pin-canvas"]');
     await expect(canvas).toBeVisible();
 
     // Check canvas dimensions correspond to Letter size
@@ -68,7 +68,7 @@ test.describe('Application Launch', () => {
   test('should show page outline clearly', async ({ page }) => {
     await page.goto('/');
 
-    const canvas = page.locator('[data-testid="canvas-container"]');
+    const canvas = page.locator('[data-testid="pin-canvas"]');
     await expect(canvas).toBeVisible();
 
     // Verify page has visible outline/border

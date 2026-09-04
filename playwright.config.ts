@@ -14,11 +14,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        channel: undefined,
-        executablePath: '/snap/bin/chromium'
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',

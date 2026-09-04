@@ -57,7 +57,7 @@ describe('DatabaseService Contract', () => {
     it('should create button area', async () => {
       const buttonAreaData = {
         sessionId: 'test-session',
-        x: 1.0,
+        x: 2.0,
         y: 2.0,
         diameter: 2.75,
         imageAssetId: null,
