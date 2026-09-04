@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // T012: Integration test image drag and drop functionality
 // Based on Quickstart Scenario 2: Image Drag and Drop

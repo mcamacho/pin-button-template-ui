@@ -1,4 +1,5 @@
-import { ButtonArea } from '@/models/ButtonArea';
+import type { ButtonAreaData } from '@/models/ButtonArea';
+import { ModelValidator } from '@/utils/validation';
 import { PrintConfiguration } from '@/models/PrintConfiguration';
 import type { ImageService } from './ImageService';
 
@@ -60,7 +61,15 @@ export interface FitValidation {
   suggestions: string[];
 }
 
-export interface PrintService {
+/**
+ * Circle-overlap test for two button areas in plain-data form.
+ */
+function buttonAreasOverlap(a: ButtonAreaData, b: ButtonAreaData): boolean {
+  const distance = Math.hypot(a.x - b.x, a.y - b.y);
+  return distance < (a.diameter + b.diameter) / 2;
+}
+
+export interface PrintServiceInterface {
   // Print Operations
   printSession(sessionId: string, config?: Partial<PrintConfiguration>): Promise<PrintResult>;
   printPreview(sessionId: string, config?: Partial<PrintConfiguration>): Promise<string>;
@@ -73,8 +82,8 @@ export interface PrintService {
 
   // Layout Calculation
   calculateButtonLayout(pageSize: PageSize, buttonDiameter: number, spacing: number): LayoutCalculation;
-  optimizeButtonPlacement(buttonAreas: ButtonArea[], pageSize: PageSize): ButtonArea[];
-  validatePageFit(buttonAreas: ButtonArea[], pageSize: PageSize): FitValidation;
+  optimizeButtonPlacement(buttonAreas: ButtonAreaData[], pageSize: PageSize): ButtonAreaData[];
+  validatePageFit(buttonAreas: ButtonAreaData[], pageSize: PageSize): FitValidation;
 
   // Browser Print Integration
   openPrintDialog(printDocument: PrintDocument): Promise<boolean>;
@@ -82,7 +91,7 @@ export interface PrintService {
   cleanupPrintStyles(): void;
 }
 
-export class PrintService implements PrintService {
+export class PrintService implements PrintServiceInterface {
   private currentPrintStyles: HTMLStyleElement | null = null;
 
   constructor(_imageService?: ImageService) {
@@ -345,8 +354,12 @@ export class PrintService implements PrintService {
     };
   }
 
-  optimizeButtonPlacement(buttonAreas: ButtonArea[], pageSize: PageSize): ButtonArea[] {
-    const optimized = buttonAreas.map(ba => ButtonArea.fromData(ba.toData()));
+  optimizeButtonPlacement(buttonAreas: ButtonAreaData[], pageSize: PageSize): ButtonAreaData[] {
+    // Work on plain-data copies. Re-arranging is exactly what you do to badly
+    // placed buttons, so the input may well be out of bounds -- running it
+    // through the validating ButtonArea constructor would reject the very
+    // cases this method exists to fix.
+    const optimized = buttonAreas.map(ba => ({ ...ba }));
 
     // Get optimal layout for standard button size
     const layout = this.calculateButtonLayout(pageSize, 2.75, 0.25);
@@ -362,7 +375,8 @@ export class PrintService implements PrintService {
         const x = startX + (col * (2.75 + layout.buttonSpacing.horizontal));
         const y = startY + (row * (2.75 + layout.buttonSpacing.vertical));
 
-        button.update({ x, y });
+        button.x = x;
+        button.y = y;
         buttonIndex++;
       }
     }
@@ -370,14 +384,23 @@ export class PrintService implements PrintService {
     return optimized;
   }
 
-  validatePageFit(buttonAreas: ButtonArea[], pageSize: PageSize): FitValidation {
+  validatePageFit(buttonAreas: ButtonAreaData[], pageSize: PageSize): FitValidation {
     const buttonsOutOfBounds: string[] = [];
     const overlappingButtons: string[] = [];
     const suggestions: string[] = [];
 
-    // Check bounds
+    // The input is plain data and, by the nature of this method, may be out of
+    // bounds -- so it cannot be run through the validating ButtonArea
+    // constructor. Use the pure geometry helpers instead.
     buttonAreas.forEach(button => {
-      if (!button.fitsInPage(pageSize.width, pageSize.height)) {
+      const fit = ModelValidator.validatePosition(
+        button.x,
+        button.y,
+        button.diameter,
+        pageSize.width,
+        pageSize.height
+      );
+      if (!fit.isValid) {
         buttonsOutOfBounds.push(button.id);
       }
     });
@@ -385,7 +408,7 @@ export class PrintService implements PrintService {
     // Check overlaps
     for (let i = 0; i < buttonAreas.length; i++) {
       for (let j = i + 1; j < buttonAreas.length; j++) {
-        if (buttonAreas[i].overlaps(buttonAreas[j])) {
+        if (buttonAreasOverlap(buttonAreas[i], buttonAreas[j])) {
           if (!overlappingButtons.includes(buttonAreas[i].id)) {
             overlappingButtons.push(buttonAreas[i].id);
           }

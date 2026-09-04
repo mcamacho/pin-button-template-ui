@@ -41,7 +41,7 @@ export interface ImageDimensions {
   aspectRatio: number;
 }
 
-export interface ImageService {
+export interface ImageServiceInterface {
   // File Input Operations
   loadImageFromFile(file: File): Promise<ImageLoadResult>;
   loadImageFromUrl(url: string): Promise<ImageLoadResult>;
@@ -68,7 +68,7 @@ export interface ImageService {
   isValidImageFormat(mimeType: string): boolean;
 }
 
-export class ImageService implements ImageService {
+export class ImageService implements ImageServiceInterface {
   private readonly SUPPORTED_FORMATS = ['image/jpeg', 'image/png', 'image/svg+xml'];
   private readonly MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
 
 export default defineConfig({
@@ -26,6 +26,16 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // `tests/integration` holds Playwright specs; they are run by `npm run
+    // test:integration`, not by Vitest. Without this they are collected here
+    // and fail at import time on `@playwright/test`.
+    include: ['tests/unit/**/*.test.ts'],
+    // ImageService decodes images via `new Image()` before drawing them to a
+    // canvas. jsdom only fires load/error events on <img> when resource
+    // loading is enabled, otherwise those code paths hang forever.
+    environmentOptions: {
+      jsdom: { resources: 'usable' },
+    },
   },
   server: {
     port: 5173,

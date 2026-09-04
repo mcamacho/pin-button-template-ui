@@ -49,7 +49,20 @@ describe('CanvasComponent Contract', () => {
 
   describe('Button Area Management', () => {
     it('should add button area', async () => {
-      const buttonArea = await canvasComponent.addButtonArea(2.0, 3.0);
+      await canvasComponent.initialize(mockContainer);
+      await canvasComponent.loadSession({
+        id: 'test-session',
+        name: 'Test Session',
+        isTemporary: false,
+        pageWidth: 8.5,
+        pageHeight: 11.0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      // The canvas component works in screen pixels at 80 DPI (same units as
+      // getButtonAreaAt); the stored model is in inches.
+      const buttonArea = await canvasComponent.addButtonArea(2.0 * 80, 3.0 * 80);
 
       expect(buttonArea.id).toBeDefined();
       expect(buttonArea.x).toBe(2.0);
